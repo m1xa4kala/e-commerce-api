@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Cart {
+  id       Int        @id @default(autoincrement())
+  userId   String     @unique
+  User     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  CartItem CartItem[]
+}
+
+model CartItem {
+  id        Int     @id @default(autoincrement())
+  cartId    Int
+  productId String  @unique
+  Cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  Product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id      Int       @id @default(autoincrement())
+  name    String
+  Product Product[]
+}
+
+model Product {
+  id                 String    @id
+  title              String
+  description        String
+  price              Int
+  discountPercentage Float
+  rating             Float
+  stock              Int
+  brand              String
+  thumbnail          String
+  images             String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime
+  categoryId         Int
+  CartItem           CartItem?
+  Category           Category  @relation(fields: [categoryId], references: [id])
+  Review             Review[]
+}
+
+model Review {
+  id        String   @id
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  authorId  String
+  productId String
+  User      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  Product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id       String   @id
+  email    String   @unique
+  name     String?  @unique
+  password String
+  role     Role     @default(USER)
+  image    Bytes?
+  Cart     Cart?
+  Review   Review[]
+}
+
+enum Role {
+  ADMIN
+  MODERATOR
+  USER
+}
