@@ -8,28 +8,37 @@ datasource db {
 }
 
 model Cart {
-  id       Int        @id @default(autoincrement())
-  userId   String     @unique
-  User     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  CartItem CartItem[]
+  id        String     @id @default(uuid())
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  userId    String     @unique
+  User      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  CartItem  CartItem[]
+  @@map("carts")
 }
 
 model CartItem {
-  id        Int     @id @default(autoincrement())
-  cartId    Int
-  productId String  @unique
-  Cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  Product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  cartId    String
+  productId String   @unique
+  Cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  Product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  @@map("cart_items")
 }
 
 model Category {
-  id      Int       @id @default(autoincrement())
-  name    String
-  Product Product[]
+  id        String    @id @default(uuid())
+  name      String
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  Product   Product[]
+  @@map("categories")
 }
 
 model Product {
-  id                 String    @id
+  id                 String    @id @default(uuid())
   title              String
   description        String
   price              Int
@@ -39,34 +48,50 @@ model Product {
   brand              String
   thumbnail          String
   images             String
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime
-  categoryId         Int
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  categoryId         String
   CartItem           CartItem?
   Category           Category  @relation(fields: [categoryId], references: [id])
   Review             Review[]
+  @@map("products")
 }
 
 model Review {
-  id        String   @id
+  id        String   @id @default(uuid())
   content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
   authorId  String
   productId String
   User      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   Product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  @@map("reviews")
 }
 
 model User {
-  id       String   @id
-  email    String   @unique
-  name     String?  @unique
-  password String
-  role     Role     @default(USER)
-  image    Bytes?
-  Cart     Cart?
-  Review   Review[]
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?  @unique
+  password  String
+  role      Role     @default(USER)
+  image     Bytes?
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  Cart      Cart?
+  Review    Review[]
+  Token     Token[]
+  @@map("users") 
+}
+
+model Token {
+  token     String @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  @@map("tokens")
 }
 
 enum Role {

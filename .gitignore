@@ -2,6 +2,7 @@
 /dist
 /node_modules
 /build
+/.yarn
 
 # Logs
 logs
@@ -12,7 +13,7 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# OS
+# OSs
 .DS_Store
 
 # Tests

@@ -31,14 +31,14 @@ export class CategoriesController {
     @Body() data: Prisma.CategoryUpdateInput,
   ): Promise<Category> {
     return this.categoryService.updateCategory({
-      where: { id: +id },
+      where: { id },
       data,
     });
   }
   @Delete(':id')
   delete(@Param('id') id: string): Promise<Category> {
     return this.categoryService.deleteCategory({
-      id: +id,
+      id,
     });
   }
 }
