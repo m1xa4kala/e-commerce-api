@@ -11,7 +11,7 @@ import { Category, Prisma } from '@prisma/client';
 import { CategoryService } from './category.service';
 
 @Controller('/categories')
-export class CategoriesController {
+export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
   @Get()
   findAll(): Promise<Category[]> {

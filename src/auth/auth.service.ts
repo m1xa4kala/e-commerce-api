@@ -1,5 +1,10 @@
 import { UsersService } from './../users/users.service';
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { LoginDto, RegisterDto } from './dto';
 import { Tokens } from './interfaces';
 import { compare } from 'bcrypt';
@@ -29,6 +34,19 @@ export class AuthService {
   }
 
   async register(data: RegisterDto) {
+    const { email, password, passwordConfirmation } = data;
+    if (!email || !password || !passwordConfirmation) {
+      throw new BadRequestException('Please provide all fields');
+    }
+    const user = await this.usersService
+      .findByEmail(data.email)
+      .catch((error) => {
+        this.logger.error(error);
+        return null;
+      });
+    if (user) {
+      throw new BadRequestException('User already exists');
+    }
     return this.usersService.createUser(data).catch((error) => {
       this.logger.error(error);
       return null;
@@ -37,7 +55,7 @@ export class AuthService {
 
   async login(data: LoginDto): Promise<Tokens> {
     const user: User = await this.usersService
-      .findOne(data.email)
+      .findByEmail(data.email)
       .catch((error) => {
         this.logger.error(error);
         return null;

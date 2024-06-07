@@ -10,13 +10,13 @@ export class AuthController {
   async register(@Body() data: RegisterDto) {
     const user = await this.authService.register(data);
     if (!user) {
-      throw new BadRequestException(`Email ${data.email} already exists`);
+      throw new BadRequestException('Something went wrong, try again');
     }
   }
 
   @Post('login')
   async login(@Body() data: LoginDto) {
-    const tokens = this.authService.login(data);
+    const tokens = await this.authService.login(data);
     if (!tokens) {
       throw new BadRequestException('Invalid email or password');
     }
