@@ -23,17 +23,30 @@ export class AuthService {
     private readonly prismaService: PrismaService,
   ) {}
 
-  private async createRefreshToken(userId: string): Promise<Token> {
-    return this.prismaService.token.create({
-      data: {
+  private async createRefreshToken(
+    userId: string,
+    userAgent: string,
+  ): Promise<Token> {
+    const _token = await this.prismaService.token.findFirst({
+      where: { userId, userAgent },
+    });
+    const token = _token?.token ?? '';
+    return this.prismaService.token.upsert({
+      where: { token },
+      update: {
+        token: v4(),
+        expiresAt: add(new Date(), { months: 1 }),
+      },
+      create: {
         token: v4(),
         expiresAt: add(new Date(), { months: 1 }),
         userId,
+        userAgent,
       },
     });
   }
 
-  private async generateTokens(user: User): Promise<Tokens> {
+  private async generateTokens(user: User, userAgent: string): Promise<Tokens> {
     const accessToken =
       'Bearer ' +
       (await this.jwtService.signAsync({
@@ -42,7 +55,7 @@ export class AuthService {
         name: user.name,
         role: user.role,
       }));
-    const refreshToken = await this.createRefreshToken(user.id);
+    const refreshToken = await this.createRefreshToken(user.id, userAgent);
     return { accessToken, refreshToken };
   }
 
@@ -66,7 +79,7 @@ export class AuthService {
     });
   }
 
-  async login(data: LoginDto): Promise<Tokens> {
+  async login(data: LoginDto, userAgent: string): Promise<Tokens> {
     const user: User = await this.usersService
       .findByEmail(data.email)
       .catch((error) => {
@@ -78,10 +91,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    return this.generateTokens(user);
+    return this.generateTokens(user, userAgent);
   }
 
-  async refreshToken(refreshToken: string): Promise<Tokens> {
+  async refreshToken(refreshToken: string, userAgent: string): Promise<Tokens> {
     const token = await this.prismaService.token
       .findUnique({
         where: { token: refreshToken },
@@ -108,6 +121,6 @@ export class AuthService {
       throw new BadRequestException('Invalid refresh token');
     }
     await this.prismaService.token.delete({ where: { token: token.token } });
-    return this.generateTokens(user);
+    return this.generateTokens(user, userAgent);
   }
 }
