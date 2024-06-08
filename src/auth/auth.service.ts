@@ -23,7 +23,7 @@ export class AuthService {
     private readonly prismaService: PrismaService,
   ) {}
 
-  private async getRefreshToken(userId: string): Promise<Token> {
+  private async createRefreshToken(userId: string): Promise<Token> {
     return this.prismaService.token.create({
       data: {
         token: v4(),
@@ -31,6 +31,19 @@ export class AuthService {
         userId,
       },
     });
+  }
+
+  private async generateTokens(user: User): Promise<Tokens> {
+    const accessToken =
+      'Bearer ' +
+      (await this.jwtService.signAsync({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      }));
+    const refreshToken = await this.createRefreshToken(user.id);
+    return { accessToken, refreshToken };
   }
 
   async register(data: RegisterDto) {
@@ -65,13 +78,36 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const accessToken = await this.jwtService.signAsync({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    });
-    const refreshToken = await this.getRefreshToken(user.id);
-    return { accessToken, refreshToken };
+    return this.generateTokens(user);
+  }
+
+  async refreshToken(refreshToken: string): Promise<Tokens> {
+    const token = await this.prismaService.token
+      .findUnique({
+        where: { token: refreshToken },
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        return null;
+      });
+    if (!token) {
+      throw new BadRequestException('Invalid refresh token');
+    }
+    if (token.expiresAt < new Date()) {
+      throw new BadRequestException('Refresh token expired');
+    }
+    const user = await this.prismaService.user
+      .findUnique({
+        where: { id: token.userId },
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        return null;
+      });
+    if (!user) {
+      throw new BadRequestException('Invalid refresh token');
+    }
+    await this.prismaService.token.delete({ where: { token: token.token } });
+    return this.generateTokens(user);
   }
 }
